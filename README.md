@@ -7,6 +7,9 @@ Todo dia de manhã o robô consulta o Google Flights, grava o menor preço de id
 - 📉 bate o **menor preço já registrado**;
 - ⬇️ cai mais de X% desde a consulta anterior.
 
+Além disso, todo dia chega um **📊 resumo** com uma tabela: preço de hoje, de ontem e a variação
+de cada busca (dá para desligar com `"resumo_diario": false` no `config.json`).
+
 O gráfico fica em `index.html`. Para vê-lo no navegador, ligue o GitHub Pages em
 **Settings → Pages → Branch: `main` / `(root)` → Save** e acesse
 <https://pedro4541.github.io/robo-passagens/>.

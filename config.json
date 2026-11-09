@@ -10,20 +10,23 @@
     4500
   ],
   "avisar_queda_percentual": 3,
+  "resumo_diario": true,
   "buscas": [
     {
       "nome": "Campinas (VCP) → Orlando",
       "origem": "VCP",
       "destino": "MCO",
       "ida": "2027-04-24",
-      "volta": "2027-05-09"
+      "volta": "2027-05-09",
+      "apelido": "VCP 5p"
     },
     {
       "nome": "São Paulo (GRU) → Orlando",
       "origem": "GRU",
       "destino": "MCO",
       "ida": "2027-04-24",
-      "volta": "2027-05-09"
+      "volta": "2027-05-09",
+      "apelido": "GRU 5p"
     },
     {
       "nome": "Campinas (VCP) → Orlando · 1 pessoa (referência)",
@@ -32,7 +35,8 @@
       "ida": "2027-04-24",
       "volta": "2027-05-09",
       "adultos": 1,
-      "criancas": 0
+      "criancas": 0,
+      "apelido": "VCP 1p"
     }
   ],
   "_ajuda": {
@@ -41,6 +45,8 @@
     "max_paradas": "0 = qualquer, 1 = só voo direto, 2 = até 1 parada, 3 = até 2 paradas",
     "avisar_queda_percentual": "avisa quando o preço cai pelo menos X% em relação ao último registro",
     "origem/destino": "códigos IATA: GRU/CGH São Paulo, VCP Campinas, GIG Rio, BSB Brasília, CNF BH | MCO Orlando",
-    "marcos_por_pessoa": "valores por pessoa (ida e volta): avisa quando o preço fica abaixo de cada um deles"
+    "marcos_por_pessoa": "valores por pessoa (ida e volta): avisa quando o preço fica abaixo de cada um deles",
+    "resumo_diario": "true = manda todo dia uma tabela com o preço de hoje, o de ontem e a variação",
+    "apelido": "nome curto da busca usado na tabela do resumo (até ~7 letras)"
   }
 }

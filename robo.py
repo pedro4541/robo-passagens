@@ -106,6 +106,30 @@ def avisar_telegram(texto):
     urllib.request.urlopen(f"https://api.telegram.org/bot{token}/sendMessage", corpo, timeout=30)
 
 
+def num(v):
+    return f"{float(v):,.0f}".replace(",", ".")
+
+
+def montar_resumo(linhas, data):
+    """Tabela em texto de largura fixa (o Telegram não tem tabela de verdade)."""
+    tab = [f"{'':7} {'Hoje':>6} {'Ontem':>6} {'Var':>6}"]
+    for apelido, hoje, ontem in linhas:
+        if hoje is None:
+            tab.append(f"{apelido:7} {'erro':>6}")
+            continue
+        if ontem:
+            var = (hoje - ontem) / ontem * 100
+            seta = "▼" if var < 0 else "▲" if var > 0 else " "
+            tab.append(f"{apelido:7} {num(hoje):>6} {num(ontem):>6} {seta}{abs(var):4.1f}%")
+        else:
+            tab.append(f"{apelido:7} {num(hoje):>6} {'-':>6} {'novo':>6}")
+    dia = datetime.strptime(data, "%Y-%m-%d").strftime("%d/%m")
+    return (f"📊 <b>Resumo {dia}</b> · R$ por pessoa, ida e volta\n"
+            f"<pre>{html.escape(chr(10).join(tab))}</pre>\n"
+            "<i>5p = 5 pessoas · 1p = 1 pessoa</i>\n"
+            '<a href="https://pedro4541.github.io/robo-passagens/">📈 Ver gráfico</a>')
+
+
 def motivos_de_alerta(cfg, preco, anteriores):
     motivos = []
     ultimo = float(anteriores[-1]["preco"]) if anteriores else None
@@ -133,19 +157,23 @@ def main():
     cfg = json.loads(CONFIG.read_text(encoding="utf-8"))
     historico = ler_historico()
     agora = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
-    alertas, falhas = [], 0
+    hoje = agora[:10]
+    alertas, resumo, falhas = [], [], 0
 
     for busca in cfg["buscas"]:
         print(f"→ {busca['nome']}")
+        apelido = busca.get("apelido", busca["nome"][:7])
         try:
             dados = buscar_voos(cfg, busca, chave)
             resultado = melhor_opcao(dados)
         except Exception as e:  # segue para a próxima busca
             print(f"  erro: {e}")
+            resumo.append((apelido, None, None))
             falhas += 1
             continue
         if not resultado:
             print("  nenhum voo encontrado")
+            resumo.append((apelido, None, None))
             continue
         total, companhia, paradas, duracao = resultado
         pessoas = max(busca.get("adultos", cfg.get("adultos", 1))
@@ -156,6 +184,10 @@ def main():
         print(f"  {brl(preco)}/pessoa (total {brl(total)})  {companhia}  paradas={paradas}  nível={ins.get('price_level', '?')}")
 
         anteriores = [h for h in historico if h["busca"] == busca["nome"]]
+        de_ontem = [a for a in anteriores if a["data_consulta"][:10] < hoje]
+        # compara com o último registro de um dia anterior (ou, no 1º dia, com o anterior)
+        base = de_ontem or anteriores
+        resumo.append((apelido, preco, float(base[-1]["preco"]) if base else None))
         motivos = motivos_de_alerta(cfg, preco, anteriores)
         if motivos:
             link = ("https://www.google.com/travel/flights?hl=pt-BR&curr=BRL&q="
@@ -180,6 +212,10 @@ def main():
             "faixa_tipica_min": faixa[0], "faixa_tipica_max": faixa[1],
         })
 
+    if cfg.get("resumo_diario") and resumo:
+        texto = montar_resumo(resumo, hoje)
+        print("\n" + texto)
+        avisar_telegram(texto)
     for a in alertas:
         print("\n" + a)
         avisar_telegram(a)
