@@ -52,9 +52,9 @@ fetch('historico.csv?'+Date.now()).then(r=>{if(!r.ok)throw 0;return r.text()}).t
     data:{datasets:nomes.map((n,i)=>({label:n,data:Object.entries(Object.fromEntries(por[n].map(d=>[d.data_consulta.slice(0,10),+d.preco]))).map(([x,y])=>({x,y})),
       borderColor:cores[i%cores.length],backgroundColor:cores[i%cores.length],tension:.25,pointRadius:3}))},
     options:{maintainAspectRatio:false,interaction:{mode:'nearest',intersect:false},
-      scales:{x:{type:'category',labels:[...new Set(dados.map(d=>d.data_consulta.slice(0,10)))],ticks:{color:'#64748b'},grid:{color:'#1e2a3a'}},
+      scales:{x:{type:'category',labels:[...new Set(dados.map(d=>d.data_consulta.slice(0,10)))],ticks:{color:'#64748b',callback(v){const d=this.getLabelForValue(v);return d.slice(8,10)+'/'+d.slice(5,7)}},grid:{color:'#1e2a3a'}},
               y:{ticks:{color:'#64748b',callback:brl},grid:{color:'#1e2a3a'}}},
-      plugins:{legend:{labels:{color:'#94a3b8'}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+brl(c.parsed.y)}}}}});
+      plugins:{legend:{labels:{color:'#94a3b8',boxWidth:10,boxHeight:10,font:{size:11}}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+brl(c.parsed.y)}}}}});
 }).catch(()=>{document.querySelector('.box').innerHTML='<div class="vazio">Ainda não há histórico.<br>Depois da primeira execução do robô os preços aparecem aqui.</div>'});
 </script>
 </body>
