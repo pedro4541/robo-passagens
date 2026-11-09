@@ -112,7 +112,7 @@ def avisar_telegram(texto):
     corpo = urllib.parse.urlencode({"chat_id": chat, "text": texto, "parse_mode": "HTML"}).encode()
     for tentativa, espera in enumerate([10, 30, 90, None], start=1):
         try:
-            urllib.request.urlopen(f"https://api.telegram.org/bot{token}/sendMessage", corpo, timeout=30)
+            urllib.request.urlopen(f"https://api.telegram.org/bot{token}/sendMessage", corpo, timeout=60)
             return True
         except Exception as e:  # o Telegram às vezes fica fora do ar por alguns segundos
             print(f"  Telegram falhou (tentativa {tentativa}): {e}")
