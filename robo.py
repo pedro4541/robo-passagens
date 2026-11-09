@@ -2,7 +2,8 @@
 """Robô que acompanha o preço de passagens aéreas (Google Flights via SerpApi).
 
 Para cada busca do config.json ele:
-  1. consulta o menor preço de ida e volta;
+  1. consulta o menor preço de ida e volta (o Google devolve o total de todos
+     os passageiros; o robô divide e trabalha com o preço POR PESSOA);
   2. grava uma linha em historico.csv;
   3. manda mensagem no Telegram se o preço caiu, bateu o mínimo histórico
      ou ficou abaixo do preço-alvo.
@@ -29,7 +30,7 @@ CONFIG = PASTA / "config.json"
 HISTORICO = PASTA / "historico.csv"
 COLUNAS = [
     "data_consulta", "busca", "origem", "destino", "ida", "volta",
-    "preco", "moeda", "companhia", "paradas", "duracao_min",
+    "preco", "preco_total", "moeda", "companhia", "paradas", "duracao_min",
     "nivel_preco", "faixa_tipica_min", "faixa_tipica_max",
 ]
 
@@ -107,9 +108,9 @@ def avisar_telegram(texto):
 
 def motivos_de_alerta(cfg, preco, anteriores):
     motivos = []
-    alvo = cfg.get("preco_alvo")
+    alvo = cfg.get("preco_alvo_por_pessoa")
     if alvo and preco <= alvo:
-        motivos.append(f"🎯 abaixo do seu alvo de {brl(alvo)}")
+        motivos.append(f"🎯 chegou no seu alvo de {brl(alvo)}")
     if anteriores:
         ultimo = float(anteriores[-1]["preco"])
         minimo = min(float(a["preco"]) for a in anteriores)
@@ -144,10 +145,12 @@ def main():
         if not resultado:
             print("  nenhum voo encontrado")
             continue
-        preco, companhia, paradas, duracao = resultado
+        total, companhia, paradas, duracao = resultado
+        pessoas = max(cfg.get("adultos", 1) + cfg.get("criancas", 0), 1)
+        preco = round(total / pessoas)
         ins = dados.get("price_insights", {})
-        faixa = ins.get("typical_price_range") or ["", ""]
-        print(f"  {brl(preco)}  {companhia}  paradas={paradas}  nível={ins.get('price_level', '?')}")
+        faixa = [round(v / pessoas) for v in (ins.get("typical_price_range") or [])] or ["", ""]
+        print(f"  {brl(preco)}/pessoa (total {brl(total)})  {companhia}  paradas={paradas}  nível={ins.get('price_level', '?')}")
 
         anteriores = [h for h in historico if h["busca"] == busca["nome"]]
         motivos = motivos_de_alerta(cfg, preco, anteriores)
@@ -157,17 +160,18 @@ def main():
                                          f"{busca['ida']} volta {busca['volta']}"))
             nivel = {"low": "baixo", "typical": "normal", "high": "alto"}.get(ins.get("price_level"), "")
             alertas.append(
-                f"✈️ <b>{busca['nome']}</b>\n<b>{brl(preco)}</b> total · {html.escape(companhia) or 'várias'}"
-                f" · {paradas} parada(s)\n" + "\n".join(motivos)
+                f"✈️ <b>{busca['nome']}</b>\n<b>{brl(preco)} por pessoa</b> (total {brl(total)})\n"
+                f"{html.escape(companhia) or 'várias'} · "
+                + ("voo direto" if paradas == 0 else f"{paradas} parada(s)") + "\n" + "\n".join(motivos)
                 + (f"\nGoogle diz que o preço está <b>{nivel}</b>" if nivel else "")
-                + (f" (normal: {brl(faixa[0])} a {brl(faixa[1])})" if faixa[0] else "")
+                + (f" (normal: {brl(faixa[0])} a {brl(faixa[1])} por pessoa)" if faixa[0] else "")
                 + f"\n<a href=\"{html.escape(link)}\">Ver no Google Flights</a>"
             )
 
         gravar({
             "data_consulta": agora, "busca": busca["nome"], "origem": busca["origem"],
             "destino": busca["destino"], "ida": busca["ida"], "volta": busca["volta"],
-            "preco": preco, "moeda": cfg.get("moeda", "BRL"), "companhia": companhia,
+            "preco": preco, "preco_total": total, "moeda": cfg.get("moeda", "BRL"), "companhia": companhia,
             "paradas": paradas, "duracao_min": duracao, "nivel_preco": ins.get("price_level", ""),
             "faixa_tipica_min": faixa[0], "faixa_tipica_max": faixa[1],
         })
