@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e14">
+<title>Passagens Orlando</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0a0e14;--s:#111722;--bd:#1e2a3a;--grn:#34d399;--ped:#38bdf8;--org:#fb923c;--red:#f87171;--pur:#a78bfa;--car:#f472b6;--txt:#e2e8f0;--dim:#64748b;--dim2:#94a3b8;}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh}
+.wrap{max-width:1000px;margin:0 auto;padding:28px 16px}
+h1{font-size:22px;margin-bottom:4px}h1 em{color:var(--grn);font-style:normal}
+.sub{color:var(--dim2);margin-bottom:24px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:20px}
+.card{background:var(--s);border:1px solid var(--bd);border-radius:14px;padding:16px}
+.card .n{color:var(--dim2);font-size:12px;margin-bottom:6px}
+.card .p{font-size:24px;font-weight:700}
+.card .d{font-size:12px;margin-top:6px;color:var(--dim2)}
+.up{color:var(--red)}.down{color:var(--grn)}
+.box{background:var(--s);border:1px solid var(--bd);border-radius:14px;padding:16px;height:380px}
+.vazio{color:var(--dim2);padding:40px 0;text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Passagens <em>Orlando</em> ✈️</h1>
+  <p class="sub">Menor preço de ida e volta por dia de consulta · Disney abril/2027</p>
+  <div class="cards" id="cards"></div>
+  <div class="box"><canvas id="graf"></canvas></div>
+</div>
+<script>
+const cores=['#34d399','#38bdf8','#fb923c','#a78bfa','#f472b6','#f87171'];
+const brl=v=>'R$ '+Math.round(v).toLocaleString('pt-BR');
+function lerCSV(t){
+  const [cab,...ls]=t.trim().split('\n');const k=cab.split(',');
+  return ls.map(l=>{const v=l.split(',');return Object.fromEntries(k.map((c,i)=>[c,v[i]]))});
+}
+fetch('historico.csv?'+Date.now()).then(r=>{if(!r.ok)throw 0;return r.text()}).then(t=>{
+  const dados=lerCSV(t),por={};
+  dados.forEach(d=>(por[d.busca]??=[]).push(d));
+  const nomes=Object.keys(por);
+  document.getElementById('cards').innerHTML=nomes.map((n,i)=>{
+    const h=por[n],u=+h.at(-1).preco,a=h.length>1?+h.at(-2).preco:u,m=Math.min(...h.map(x=>+x.preco));
+    const dif=u-a,cls=dif>0?'up':dif<0?'down':'';
+    return `<div class="card" style="border-top:3px solid ${cores[i%cores.length]}"><div class="n">${n}</div>
+      <div class="p">${brl(u)}</div><div class="d"><span class="${cls}">${dif?(dif>0?'▲ ':'▼ ')+brl(Math.abs(dif)):'sem variação'}</span>
+      · mínimo ${brl(m)} · ${h.at(-1).companhia||''}</div></div>`}).join('');
+  new Chart(document.getElementById('graf'),{type:'line',
+    data:{datasets:nomes.map((n,i)=>({label:n,data:Object.entries(Object.fromEntries(por[n].map(d=>[d.data_consulta.slice(0,10),+d.preco]))).map(([x,y])=>({x,y})),
+      borderColor:cores[i%cores.length],backgroundColor:cores[i%cores.length],tension:.25,pointRadius:3}))},
+    options:{maintainAspectRatio:false,interaction:{mode:'nearest',intersect:false},
+      scales:{x:{type:'category',labels:[...new Set(dados.map(d=>d.data_consulta.slice(0,10)))],ticks:{color:'#64748b'},grid:{color:'#1e2a3a'}},
+              y:{ticks:{color:'#64748b',callback:brl},grid:{color:'#1e2a3a'}}},
+      plugins:{legend:{labels:{color:'#94a3b8'}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+brl(c.parsed.y)}}}}});
+}).catch(()=>{document.querySelector('.box').innerHTML='<div class="vazio">Ainda não há histórico.<br>Depois da primeira execução do robô os preços aparecem aqui.</div>'});
+</script>
+</body>
+</html>

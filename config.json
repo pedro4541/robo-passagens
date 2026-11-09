@@ -1,0 +1,21 @@
+{
+  "moeda": "BRL",
+  "adultos": 2,
+  "criancas": 0,
+  "classe": 1,
+  "max_paradas": 0,
+  "preco_alvo": 9000,
+  "avisar_queda_percentual": 3,
+  "buscas": [
+    { "nome": "GRU-MCO 10 a 20/abr", "origem": "GRU", "destino": "MCO", "ida": "2027-04-10", "volta": "2027-04-20" },
+    { "nome": "GRU-MCO 17 a 27/abr", "origem": "GRU", "destino": "MCO", "ida": "2027-04-17", "volta": "2027-04-27" }
+  ],
+  "_ajuda": {
+    "adultos/criancas": "quantidade de passageiros",
+    "classe": "1 = econômica, 2 = premium economy, 3 = executiva, 4 = primeira",
+    "max_paradas": "0 = qualquer, 1 = só voo direto, 2 = até 1 parada, 3 = até 2 paradas",
+    "preco_alvo": "preço TOTAL (todos os passageiros, ida e volta) abaixo do qual você quer ser avisado sempre",
+    "avisar_queda_percentual": "avisa quando o preço cai pelo menos X% em relação ao último registro",
+    "origem/destino": "códigos IATA: GRU/CGH São Paulo, GIG Rio, BSB Brasília, CNF BH, VCP Campinas, REC Recife, FOR Fortaleza | MCO Orlando"
+  }
+}
