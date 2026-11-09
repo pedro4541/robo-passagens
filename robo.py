@@ -22,7 +22,7 @@ import os
 import sys
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 PASTA = Path(__file__).resolve().parent
@@ -74,6 +74,12 @@ def melhor_opcao(dados):
     trechos = o.get("flights", [])
     companhias = sorted({t.get("airline", "") for t in trechos if t.get("airline")})
     return o["price"], " / ".join(companhias), max(len(trechos) - 1, 0), o.get("total_duration", "")
+
+
+def dia_brasilia(data_consulta_utc):
+    """'2026-11-09 01:51' (UTC) -> '2026-11-08' (data no horário de Brasília)."""
+    dt = datetime.strptime(data_consulta_utc, "%Y-%m-%d %H:%M") - timedelta(hours=3)
+    return dt.strftime("%Y-%m-%d")
 
 
 def ler_historico():
@@ -157,7 +163,14 @@ def main():
     cfg = json.loads(CONFIG.read_text(encoding="utf-8"))
     historico = ler_historico()
     agora = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
-    hoje = agora[:10]
+    hoje = dia_brasilia(agora)
+
+    # O agendamento do GitHub tem horários "reserva" (caso ele pule um).
+    # Se já houve consulta hoje, as execuções agendadas seguintes não fazem nada.
+    if (os.environ.get("GITHUB_EVENT_NAME") == "schedule"
+            and any(dia_brasilia(h["data_consulta"]) == hoje for h in historico)):
+        print(f"Já consultei hoje ({hoje}); nada a fazer.")
+        return
     alertas, resumo, falhas = [], [], 0
 
     for busca in cfg["buscas"]:
@@ -184,7 +197,7 @@ def main():
         print(f"  {brl(preco)}/pessoa (total {brl(total)})  {companhia}  paradas={paradas}  nível={ins.get('price_level', '?')}")
 
         anteriores = [h for h in historico if h["busca"] == busca["nome"]]
-        de_ontem = [a for a in anteriores if a["data_consulta"][:10] < hoje]
+        de_ontem = [a for a in anteriores if dia_brasilia(a["data_consulta"]) < hoje]
         # compara com o último registro de um dia anterior (ou, no 1º dia, com o anterior)
         base = de_ontem or anteriores
         resumo.append((apelido, preco, float(base[-1]["preco"]) if base else None))

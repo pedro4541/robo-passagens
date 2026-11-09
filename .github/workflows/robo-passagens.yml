@@ -2,7 +2,11 @@ name: Robô de passagens
 
 on:
   schedule:
-    - cron: "17 11 * * *"   # todo dia às 08:17 (horário de Brasília)
+    # O GitHub às vezes atrasa ou pula execuções agendadas, então há horários
+    # reserva. O robô só consulta na primeira que rodar no dia.
+    - cron: "17 11 * * *"   # 08:17 (horário de Brasília)
+    - cron: "47 12 * * *"   # 09:47 (reserva)
+    - cron: "17 15 * * *"   # 12:17 (reserva)
   workflow_dispatch:         # botão "Run workflow" para rodar na hora
 
 permissions:
