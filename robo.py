@@ -46,8 +46,8 @@ def buscar_voos(cfg, busca, chave):
         "currency": cfg.get("moeda", "BRL"),
         "hl": "pt",
         "gl": "br",
-        "adults": cfg.get("adultos", 1),
-        "children": cfg.get("criancas", 0),
+        "adults": busca.get("adultos", cfg.get("adultos", 1)),
+        "children": busca.get("criancas", cfg.get("criancas", 0)),
         "travel_class": cfg.get("classe", 1),
         "api_key": chave,
     }
@@ -108,9 +108,11 @@ def avisar_telegram(texto):
 
 def motivos_de_alerta(cfg, preco, anteriores):
     motivos = []
-    alvo = cfg.get("preco_alvo_por_pessoa")
-    if alvo and preco <= alvo:
-        motivos.append(f"🎯 chegou no seu alvo de {brl(alvo)}")
+    ultimo = float(anteriores[-1]["preco"]) if anteriores else None
+    # avisa só quando o preço CRUZA o marco (estava acima e ficou abaixo)
+    for marco in sorted(cfg.get("marcos_por_pessoa", []), reverse=True):
+        if preco < marco and (ultimo is None or ultimo >= marco):
+            motivos.append(f"🎯 ficou abaixo de {brl(marco)} por pessoa!")
     if anteriores:
         ultimo = float(anteriores[-1]["preco"])
         minimo = min(float(a["preco"]) for a in anteriores)
@@ -146,7 +148,8 @@ def main():
             print("  nenhum voo encontrado")
             continue
         total, companhia, paradas, duracao = resultado
-        pessoas = max(cfg.get("adultos", 1) + cfg.get("criancas", 0), 1)
+        pessoas = max(busca.get("adultos", cfg.get("adultos", 1))
+                      + busca.get("criancas", cfg.get("criancas", 0)), 1)
         preco = round(total / pessoas)
         ins = dados.get("price_insights", {})
         faixa = [round(v / pessoas) for v in (ins.get("typical_price_range") or [])] or ["", ""]
@@ -160,7 +163,8 @@ def main():
                                          f"{busca['ida']} volta {busca['volta']}"))
             nivel = {"low": "baixo", "typical": "normal", "high": "alto"}.get(ins.get("price_level"), "")
             alertas.append(
-                f"✈️ <b>{busca['nome']}</b>\n<b>{brl(preco)} por pessoa</b> (total {brl(total)})\n"
+                f"✈️ <b>{busca['nome']}</b>\n<b>{brl(preco)} por pessoa</b>"
+                + (f" (total {brl(total)})" if pessoas > 1 else "") + "\n"
                 f"{html.escape(companhia) or 'várias'} · "
                 + ("voo direto" if paradas == 0 else f"{paradas} parada(s)") + "\n" + "\n".join(motivos)
                 + (f"\nGoogle diz que o preço está <b>{nivel}</b>" if nivel else "")

@@ -3,7 +3,7 @@
 Todo dia de manhã o robô consulta o Google Flights, grava o menor preço de ida e volta em
 `historico.csv` e te avisa no Telegram quando:
 
-- 🎯 o preço **por pessoa** chega no seu **preço-alvo**;
+- 🎯 o preço **por pessoa** fica abaixo de um dos **marcos** (R$ 5.500, R$ 5.000 e R$ 4.500);
 - 📉 bate o **menor preço já registrado**;
 - ⬇️ cai mais de X% desde a consulta anterior.
 
@@ -18,7 +18,7 @@ O gráfico fica em `index.html`. Para vê-lo no navegador, ligue o GitHub Pages 
 2. Copie a **API Key** em *Dashboard → Api Key*.
 
 > O plano grátis tem um limite de buscas por mês (veja no painel). Cada linha de `buscas`
-> no `config.json` gasta 1 busca por dia: 2 buscas (VCP e GRU) ≈ 60 buscas/mês.
+> no `config.json` gasta 1 busca por dia: 3 buscas (VCP, GRU e VCP para 1 pessoa) ≈ 90 buscas/mês.
 
 ### 2. Bot do Telegram (avisos no celular; opcional, mas recomendado)
 1. No Telegram, fale com **@BotFather** → `/newbot` → escolha um nome → copie o **token**.
@@ -37,7 +37,7 @@ No repositório: **Settings → Secrets and variables → Actions → New reposi
 
 ### 4. Ajustar a viagem
 Edite `config.json`: aeroporto de origem, datas de ida e volta, nº de adultos e
-crianças, preço-alvo **por pessoa** (ida e volta). Pode ter várias combinações de
+crianças, marcos de preço **por pessoa** (ida e volta). Pode ter várias combinações de
 aeroportos e datas para comparar.
 
 ### 5. Testar
