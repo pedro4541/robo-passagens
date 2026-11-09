@@ -20,6 +20,7 @@ import html
 import json
 import os
 import sys
+import time
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -107,9 +108,17 @@ def avisar_telegram(texto):
     chat = os.environ.get("TELEGRAM_CHAT_ID")
     if not token or not chat:
         print("  (Telegram não configurado, só imprimindo)")
-        return
+        return True
     corpo = urllib.parse.urlencode({"chat_id": chat, "text": texto, "parse_mode": "HTML"}).encode()
-    urllib.request.urlopen(f"https://api.telegram.org/bot{token}/sendMessage", corpo, timeout=30)
+    for tentativa, espera in enumerate([10, 30, 90, None], start=1):
+        try:
+            urllib.request.urlopen(f"https://api.telegram.org/bot{token}/sendMessage", corpo, timeout=30)
+            return True
+        except Exception as e:  # o Telegram às vezes fica fora do ar por alguns segundos
+            print(f"  Telegram falhou (tentativa {tentativa}): {e}")
+            if espera is None:
+                return False
+            time.sleep(espera)
 
 
 def num(v):
@@ -225,15 +234,18 @@ def main():
             "faixa_tipica_min": faixa[0], "faixa_tipica_max": faixa[1],
         })
 
+    mensagens = alertas
     if cfg.get("resumo_diario") and resumo:
-        texto = montar_resumo(resumo, hoje)
-        print("\n" + texto)
-        avisar_telegram(texto)
-    for a in alertas:
-        print("\n" + a)
-        avisar_telegram(a)
+        mensagens = [montar_resumo(resumo, hoje)] + alertas
+    nao_enviadas = 0
+    for m in mensagens:
+        print("\n" + m)
+        if not avisar_telegram(m):
+            nao_enviadas += 1
     if falhas == len(cfg["buscas"]):
         sys.exit("Todas as buscas falharam.")
+    if nao_enviadas:
+        sys.exit(f"{nao_enviadas} mensagem(ns) não chegaram ao Telegram (o histórico foi salvo).")
 
 
 if __name__ == "__main__":

@@ -30,6 +30,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python robo.py
       - name: Salvar histórico
+        if: always()   # salva mesmo que o envio ao Telegram tenha falhado
         run: |
           git config user.name "robo-passagens"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
