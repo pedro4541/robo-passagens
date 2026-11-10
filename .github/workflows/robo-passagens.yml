@@ -8,6 +8,8 @@ on:
     - cron: "47 12 * * *"   # 09:47 (reserva)
     - cron: "17 15 * * *"   # 12:17 (reserva)
   workflow_dispatch:         # botão "Run workflow" para rodar na hora
+  repository_dispatch:       # chamado pelo despertador externo (cron-job.org)
+    types: [consulta-diaria]
 
 permissions:
   contents: write

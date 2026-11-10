@@ -174,9 +174,9 @@ def main():
     agora = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
     hoje = dia_brasilia(agora)
 
-    # O agendamento do GitHub tem horários "reserva" (caso ele pule um).
-    # Se já houve consulta hoje, as execuções agendadas seguintes não fazem nada.
-    if (os.environ.get("GITHUB_EVENT_NAME") == "schedule"
+    # Execuções automáticas (despertador externo ou agendamento reserva do GitHub)
+    # só consultam uma vez por dia; as seguintes não fazem nada.
+    if (os.environ.get("GITHUB_EVENT_NAME") in ("schedule", "repository_dispatch")
             and any(dia_brasilia(h["data_consulta"]) == hoje for h in historico)):
         print(f"Já consultei hoje ({hoje}); nada a fazer.")
         return
