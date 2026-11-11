@@ -29,6 +29,7 @@ from pathlib import Path
 PASTA = Path(__file__).resolve().parent
 CONFIG = PASTA / "config.json"
 HISTORICO = PASTA / "historico.csv"
+HORA_MINIMA = 7  # execuções automáticas só consultam a partir desta hora (Brasília)
 COLUNAS = [
     "data_consulta", "busca", "origem", "destino", "ida", "volta",
     "preco", "preco_total", "moeda", "companhia", "paradas", "duracao_min",
@@ -174,12 +175,17 @@ def main():
     agora = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
     hoje = dia_brasilia(agora)
 
-    # Execuções automáticas (despertador externo ou agendamento reserva do GitHub)
-    # só consultam uma vez por dia; as seguintes não fazem nada.
-    if (os.environ.get("GITHUB_EVENT_NAME") in ("schedule", "repository_dispatch")
-            and any(dia_brasilia(h["data_consulta"]) == hoje for h in historico)):
-        print(f"Já consultei hoje ({hoje}); nada a fazer.")
-        return
+    # Execuções automáticas chegam de hora em hora (o GitHub atrasa os agendamentos,
+    # então "batemos na porta" várias vezes). Só a primeira a partir das 07:00
+    # (Brasília) consulta; as outras do dia não fazem nada e não gastam buscas.
+    if os.environ.get("GITHUB_EVENT_NAME") in ("schedule", "repository_dispatch"):
+        hora_br = (datetime.now(timezone.utc) - timedelta(hours=3)).hour
+        if hora_br < HORA_MINIMA:
+            print(f"Ainda são {hora_br}h em Brasília; a consulta é a partir das {HORA_MINIMA}h.")
+            return
+        if any(dia_brasilia(h["data_consulta"]) == hoje for h in historico):
+            print(f"Já consultei hoje ({hoje}); nada a fazer.")
+            return
     alertas, resumo, falhas = [], [], 0
 
     for busca in cfg["buscas"]:
