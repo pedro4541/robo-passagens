@@ -4,7 +4,7 @@ on:
   schedule:
     # O GitHub atrasa (às vezes horas) as execuções agendadas. Por isso ele
     # chama o robô de hora em hora; o robô só consulta na primeira chamada
-    # a partir das 07:00 (Brasília) e ignora as demais do dia.
+    # a partir das 05:00 (Brasília) e ignora as demais do dia.
     - cron: "23 * * * *"
   workflow_dispatch:         # botão "Run workflow" para rodar na hora
   repository_dispatch:       # chamado pelo despertador externo (cron-job.org)

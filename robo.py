@@ -29,7 +29,7 @@ from pathlib import Path
 PASTA = Path(__file__).resolve().parent
 CONFIG = PASTA / "config.json"
 HISTORICO = PASTA / "historico.csv"
-HORA_MINIMA = 7  # execuções automáticas só consultam a partir desta hora (Brasília)
+HORA_MINIMA = 5  # execuções automáticas só consultam a partir desta hora (Brasília)
 COLUNAS = [
     "data_consulta", "busca", "origem", "destino", "ida", "volta",
     "preco", "preco_total", "moeda", "companhia", "paradas", "duracao_min",
