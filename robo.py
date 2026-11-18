@@ -29,6 +29,7 @@ from pathlib import Path
 PASTA = Path(__file__).resolve().parent
 CONFIG = PASTA / "config.json"
 HISTORICO = PASTA / "historico.csv"
+PENDENTES = PASTA / "pendentes.json"  # mensagens que o Telegram não aceitou; reenviadas depois
 HORA_MINIMA = 5  # execuções automáticas só consultam a partir desta hora (Brasília)
 COLUNAS = [
     "data_consulta", "busca", "origem", "destino", "ida", "volta",
@@ -122,6 +123,34 @@ def avisar_telegram(texto):
             time.sleep(espera)
 
 
+def ler_pendentes():
+    if not PENDENTES.exists():
+        return []
+    return json.loads(PENDENTES.read_text(encoding="utf-8"))
+
+
+def gravar_pendentes(lista):
+    if lista:
+        PENDENTES.write_text(json.dumps(lista, ensure_ascii=False, indent=2), encoding="utf-8")
+    elif PENDENTES.exists():
+        PENDENTES.unlink()
+
+
+def enviar_pendentes():
+    """Tenta entregar mensagens que ficaram presas em execuções anteriores."""
+    pendentes = ler_pendentes()
+    if not pendentes:
+        return
+    print(f"Reenviando {len(pendentes)} mensagem(ns) que ficaram pendentes...")
+    restantes = []
+    for p in pendentes:
+        dia = datetime.strptime(p["dia"], "%Y-%m-%d").strftime("%d/%m")
+        texto = f"⏰ <i>Mensagem atrasada de {dia} (o Telegram estava fora do ar)</i>\n\n" + p["texto"]
+        if not avisar_telegram(texto):
+            restantes.append(p)
+    gravar_pendentes(restantes)
+
+
 def num(v):
     return f"{float(v):,.0f}".replace(",", ".")
 
@@ -167,6 +196,10 @@ def motivos_de_alerta(cfg, preco, anteriores):
 
 
 def main():
+    enviar_pendentes()
+    if os.environ.get("MODO") == "so_pendentes":
+        print("Modo só pendentes: nenhuma consulta feita.")
+        return
     chave = os.environ.get("SERPAPI_KEY")
     if not chave:
         sys.exit("Defina a variável SERPAPI_KEY (crie grátis em https://serpapi.com).")
@@ -243,15 +276,17 @@ def main():
     mensagens = alertas
     if cfg.get("resumo_diario") and resumo:
         mensagens = [montar_resumo(resumo, hoje)] + alertas
-    nao_enviadas = 0
+    nao_enviadas = []
     for m in mensagens:
         print("\n" + m)
         if not avisar_telegram(m):
-            nao_enviadas += 1
+            nao_enviadas.append({"dia": hoje, "texto": m})
+    if nao_enviadas:
+        # guarda na fila; a próxima execução (mesmo as que não consultam) tenta de novo
+        gravar_pendentes(ler_pendentes() + nao_enviadas)
+        print(f"{len(nao_enviadas)} mensagem(ns) guardada(s) em pendentes.json para reenviar depois.")
     if falhas == len(cfg["buscas"]):
         sys.exit("Todas as buscas falharam.")
-    if nao_enviadas:
-        sys.exit(f"{nao_enviadas} mensagem(ns) não chegaram ao Telegram (o histórico foi salvo).")
 
 
 if __name__ == "__main__":

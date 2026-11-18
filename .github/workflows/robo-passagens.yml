@@ -7,6 +7,12 @@ on:
     # a partir das 05:00 (Brasília) e ignora as demais do dia.
     - cron: "23 * * * *"
   workflow_dispatch:         # botão "Run workflow" para rodar na hora
+    inputs:
+      modo:
+        description: "consultar = busca preços agora; so_pendentes = só reenvia mensagens presas"
+        type: choice
+        options: [consultar, so_pendentes]
+        default: consultar
   repository_dispatch:       # chamado pelo despertador externo (cron-job.org)
     types: [consulta-diaria]
 
@@ -29,12 +35,14 @@ jobs:
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MODO: ${{ inputs.modo }}
         run: python robo.py
       - name: Salvar histórico
         if: always()   # salva mesmo que o envio ao Telegram tenha falhado
         run: |
           git config user.name "robo-passagens"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add historico.csv
+          git add -A historico.csv
+          [ -e pendentes.json ] || git ls-files --error-unmatch pendentes.json >/dev/null 2>&1 && git add -A pendentes.json || true
           git diff --cached --quiet || git commit -m "Preços de passagens $(date -u +%F)"
           git pull --rebase && git push
