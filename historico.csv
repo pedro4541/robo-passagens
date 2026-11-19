@@ -37,3 +37,6 @@ data_consulta,busca,origem,destino,ida,volta,preco,preco_total,moeda,companhia,p
 2026-11-18 14:19,Campinas (VCP) → Orlando,VCP,MCO,2027-04-24,2027-05-09,6192,30959,BRL,Azul,0,555,typical,5700,16000
 2026-11-18 14:19,São Paulo (GRU) → Orlando,GRU,MCO,2027-04-24,2027-05-09,6088,30440,BRL,LATAM,0,535,typical,5900,17000
 2026-11-18 14:19,Campinas (VCP) → Orlando · 1 pessoa (referência),VCP,MCO,2027-04-24,2027-05-09,5560,5560,BRL,Azul,0,555,low,5700,16000
+2026-11-19 13:33,Campinas (VCP) → Orlando,VCP,MCO,2027-04-24,2027-05-09,6219,31094,BRL,Azul,0,555,typical,5700,16000
+2026-11-19 13:33,São Paulo (GRU) → Orlando,GRU,MCO,2027-04-24,2027-05-09,6097,30483,BRL,LATAM,0,535,typical,5900,17000
+2026-11-19 13:33,Campinas (VCP) → Orlando · 1 pessoa (referência),VCP,MCO,2027-04-24,2027-05-09,5609,5609,BRL,Azul,0,555,low,5700,16000
