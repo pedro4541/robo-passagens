@@ -2,9 +2,10 @@ name: Robô de passagens
 
 on:
   schedule:
-    # O GitHub atrasa (às vezes horas) as execuções agendadas. Por isso ele
-    # chama o robô de hora em hora; o robô só consulta na primeira chamada
-    # a partir das 05:00 (Brasília) e ignora as demais do dia.
+    # O GitHub atrasa e descarta boa parte das execuções agendadas. Por isso
+    # ele chama o robô de hora em hora; o robô consulta na primeira chamada do
+    # dia (horário de Brasília) e ignora as demais. Antes das 07:00 a mensagem
+    # chega sem som.
     - cron: "23 * * * *"
   workflow_dispatch:         # botão "Run workflow" para rodar na hora
     inputs:

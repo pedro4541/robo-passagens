@@ -30,7 +30,7 @@ PASTA = Path(__file__).resolve().parent
 CONFIG = PASTA / "config.json"
 HISTORICO = PASTA / "historico.csv"
 PENDENTES = PASTA / "pendentes.json"  # mensagens que o Telegram não aceitou; reenviadas depois
-HORA_MINIMA = 5  # execuções automáticas só consultam a partir desta hora (Brasília)
+HORA_SILENCIOSA = 7  # mensagens enviadas antes desta hora (Brasília) chegam sem som
 COLUNAS = [
     "data_consulta", "busca", "origem", "destino", "ida", "volta",
     "preco", "preco_total", "moeda", "companhia", "paradas", "duracao_min",
@@ -111,7 +111,10 @@ def avisar_telegram(texto):
     if not token or not chat:
         print("  (Telegram não configurado, só imprimindo)")
         return True
-    corpo = urllib.parse.urlencode({"chat_id": chat, "text": texto, "parse_mode": "HTML"}).encode()
+    # de madrugada a mensagem chega sem som, para não acordar ninguém
+    silenciosa = (datetime.now(timezone.utc) - timedelta(hours=3)).hour < HORA_SILENCIOSA
+    corpo = urllib.parse.urlencode({"chat_id": chat, "text": texto, "parse_mode": "HTML",
+                                    "disable_notification": "true" if silenciosa else "false"}).encode()
     for tentativa, espera in enumerate([10, 30, 90, None], start=1):
         try:
             urllib.request.urlopen(f"https://api.telegram.org/bot{token}/sendMessage", corpo, timeout=60)
@@ -208,14 +211,10 @@ def main():
     agora = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
     hoje = dia_brasilia(agora)
 
-    # Execuções automáticas chegam de hora em hora (o GitHub atrasa os agendamentos,
-    # então "batemos na porta" várias vezes). Só a primeira a partir das 07:00
-    # (Brasília) consulta; as outras do dia não fazem nada e não gastam buscas.
+    # O GitHub dispara as execuções agendadas poucas vezes por dia e em horários
+    # imprevisíveis. A primeira do dia (horário de Brasília) consulta; as outras
+    # não fazem nada e não gastam buscas.
     if os.environ.get("GITHUB_EVENT_NAME") in ("schedule", "repository_dispatch"):
-        hora_br = (datetime.now(timezone.utc) - timedelta(hours=3)).hour
-        if hora_br < HORA_MINIMA:
-            print(f"Ainda são {hora_br}h em Brasília; a consulta é a partir das {HORA_MINIMA}h.")
-            return
         if any(dia_brasilia(h["data_consulta"]) == hoje for h in historico):
             print(f"Já consultei hoje ({hoje}); nada a fazer.")
             return
